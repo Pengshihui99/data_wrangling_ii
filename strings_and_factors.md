@@ -178,3 +178,40 @@ str_replace(string_vec, 'm', 'Mac')
 - **`str_replace()`**: replace the string/character w another
 
 # factors
+
+``` r
+fac_sex = factor(c("male", "male", "female", "female"))
+
+fac_sex
+```
+
+    ## [1] male   male   female female
+    ## Levels: female male
+
+``` r
+as.numeric(fac_sex)
+```
+
+    ## [1] 2 2 1 1
+
+- male and female have implemented some rules to determine what level
+  order are. so if convert this to numeric type, 2 and 1 will be
+  distributed
+
+- what happen if i relevel…
+
+``` r
+fac_sex_level = fct_relevel(fac_sex, 'male')
+
+as.numeric(fac_sex_level)
+```
+
+    ## [1] 1 1 2 2
+
+- here, i relevel ‘male’ as the 1st cat, so when converting to numeric
+  type, it shows 1122 instead of 2211 (when female is the 1st cat)
+- **`fct_relevel`**: reorder factor levels by hand
+- **`fct_recode`**: change factor labels by hand
+- **`fct_reorder`**: reorder factors by sorting along another variable
+  - lots of factor functions and string functions we can google or
+    search in r!

@@ -2,7 +2,7 @@
 title: "read data from the web"
 author: "Shihui Peng"
 date: "2023-10-22"
-output: html_document
+output: github_document
 ---
 
 ```{r, message=FALSE, echo=FALSE}
@@ -65,4 +65,38 @@ marj_use_df =
 * `first()`: i want to 1st table
 * `slice(-1)`: means minus the 1st row. the first row is the NOTE from the web and it is weird. use this to remove that row. 
 
+# Import star wars...
 
+* BUT, we cannot just select tables here. We need to figure out what are the html elements that we want out of that page for Star War.
+```{r}
+swm_url = 'https://www.imdb.com/list/ls070150896/'
+
+swm_html = 
+  read_html(swm_url)
+```
+we can also do `swm_html = read_html("https://www.imdb.com/list/ls070150896/")`
+
+* the trick now is to get what we want from this html file.
+  * i have star war html file now. i need to get some elements by specifying the CSS tag for things i want to get.
+  * go to Chrome, click **SelectorGadget** (top right), select stuff needed and remove stuff thai is no need.
+    * eg.select the title, and everything selected will turns into yellow. in the bar st the bottom right, it shows 'a', which means everything that is a link is selected. But we just want the title, so we click one of the other stuffs that has a link (that stuff will turn into red, indicating that it has been removed). Then the bottom right is the CSS tag of title, which is what we want. Then we copy it and paste it inside `html_elements()`
+```{r}
+swm_title_vec =
+  swm_html |> 
+  html_elements('.lister-item-header a') |> 
+  html_text()
+
+swm_gross_revenue_vec =
+  swm_html |> 
+  html_elements('.text-muted .ghost~ .text-muted+ span') |> 
+  html_text()
+
+swm_df =
+  tibble(
+    title = swm_title_vec,
+    gross_rev = swm_gross_revenue_vec
+  )
+```
+
+* **`html_elements()`**: to gt elements we want from the web. use **SelectorGadget** to get the **CSS tag** and put the CSS tag into this code.
+* how do i get stuff out? -- **`html_text`**: make a couple of diff guess for which text in the html piece do you want. so it extracts the text from the html that goes alng w the CSS tag that i want.

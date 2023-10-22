@@ -5,3 +5,64 @@ date: "2023-10-22"
 output: html_document
 ---
 
+```{r, message=FALSE, echo=FALSE}
+library(tidyverse)
+
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%"
+)
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+```
+
+```{r}
+library(rvest)
+library(httr)
+```
+
+* `rvest`: provides tools for web scraping and parsing HTML content. Useful for extracting data from websites. It allows you to navigate and select elements from HTML documents using CSS or XPath selectors.
+* `httr`: makes HTTP requests. It provides functions for sending HTTP requests, handling responses, and working with APIs.
+
+# Import NSDUH data
+```{r}
+nsduh_url = 'http://samhda.s3-us-gov-west-1.amazonaws.com/s3fs-public/field-uploads/2k15StateFiles/NSDUHsaeShortTermCHG2015.htm'
+
+nsduh_html =
+  read_html(nsduh_url)
+
+nsduh_html
+```
+
+* it looks weird, but we do successfully have an html document. so the next thing is to pull out the elements of this html file tha are actually relevant for what we want.
+
+* Rather than trying to grab something using a CSS selector, let’s try our luck extracting the tables from the HTML.
+```{r}
+nsduh_html |> 
+  html_table()
+```
+
+* the problem that goes along w this: it imports every single table. we get 15 tables in this website stored as a list.
+
+* the next step: figure out how to get data that we actually want. E.g., if i only want the first table
+```{r}
+marj_use_df =
+  nsduh_html |> 
+  html_table() |> 
+  first() |> 
+  slice(-1)
+```
+
+* `first()`: i want to 1st table
+* `slice(-1)`: means minus the 1st row. the first row is the NOTE from the web and it is weird. use this to remove that row. 
+
+

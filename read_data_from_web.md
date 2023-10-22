@@ -24,7 +24,9 @@ library(httr)
 - `httr`: makes HTTP requests. It provides functions for sending HTTP
   requests, handling responses, and working with APIs.
 
-# Import NSDUH data
+# Extracting tables
+
+## Import NSDUH data
 
 ``` r
 nsduh_url = 'http://samhda.s3-us-gov-west-1.amazonaws.com/s3fs-public/field-uploads/2k15StateFiles/NSDUHsaeShortTermCHG2015.htm'
@@ -362,7 +364,9 @@ marj_use_df =
 - `slice(-1)`: means minus the 1st row. the first row is the NOTE from
   the web and it is weird. use this to remove that row.
 
-# Import star wars…
+# CSS selectors
+
+## Import star wars…
 
 - BUT, we cannot just select tables here. We need to figure out what are
   the html elements that we want out of that page for Star War.
@@ -414,3 +418,104 @@ swm_df =
 - how do i get stuff out? – **`html_text`**: make a couple of diff guess
   for which text in the html piece do you want. so it extracts the text
   from the html that goes alng w the CSS tag that i want.
+
+# Get data directly from an API
+
+## Get water data from NYC - import as a csv and parse it
+
+``` r
+nyc_water_df = 
+  GET('https://data.cityofnewyork.us/resource/ia2d-e54m.csv') |> 
+  content('parsed')
+```
+
+    ## Rows: 44 Columns: 4
+    ## ── Column specification ────────────────────────────────────────────────────────
+    ## Delimiter: ","
+    ## dbl (4): year, new_york_city_population, nyc_consumption_million_gallons_per...
+    ## 
+    ## ℹ Use `spec()` to retrieve the full column specification for this data.
+    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+
+- **`GET()`**: it is gonna ask for whatever the thing that i’m trying to
+  get. it is like sending a request to API to get the stuff we want.
+  - in the NYC web, there is a API button. click it and in the API
+    Endpoint, select CSV (the format we want, JSON if by default), then
+    copy it and paste into `GET()`
+- **`content('parsed')`** processes the HTTP response content.
+  - **`'parsed'`**: is passed as an argument to content(), instructing
+    httr to automatically parse the content based on its type. In this
+    case, it’s a CSV file, so it will be parsed into a data frame.
+
+## Get water data from NYC - import as a JSON file
+
+We can also import this dataset as a JSON file. This takes a bit more
+work (and this is, really, a pretty easy case), but it’s still doable.
+
+``` r
+nyc_water_json_df = 
+  GET("https://data.cityofnewyork.us/resource/ia2d-e54m.json") |> 
+  content("text") |>
+  jsonlite::fromJSON() |>
+  as_tibble()
+```
+
+## BRFSS data
+
+``` r
+brfss_smart2010 = 
+  GET("https://chronicdata.cdc.gov/resource/acme-vg9e.csv",
+      query = list("$limit" = 5000)) |> 
+  content("parsed")
+```
+
+    ## Rows: 5000 Columns: 23
+    ## ── Column specification ────────────────────────────────────────────────────────
+    ## Delimiter: ","
+    ## chr (16): locationabbr, locationdesc, class, topic, question, response, data...
+    ## dbl  (6): year, sample_size, data_value, confidence_limit_low, confidence_li...
+    ## lgl  (1): locationid
+    ## 
+    ## ℹ Use `spec()` to retrieve the full column specification for this data.
+    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+
+- By default, the CDC API limits data to the `first 1000 rows`. Here
+  I’ve increased that by changing an element of the API query – I looked
+  around the website describing the API to find the name of the argument
+  (click API, it’s in `API Docs`, it may tell us something we may need
+  if we want more info), and then used the appropriate syntax for GET.
+  To get the full data, I could increase this so that I get all the data
+  at once or I could try iterating over chunks of a few thousand rows.
+
+  - but almost every API is different in terms of what we want to
+    request
+
+- **`query = list("$limit" = 5000)`**: It includes a query parameter,
+  \$limit, with a value of 5000. This parameter limits the number of
+  records returned from the data source.
+
+- why not just download a csv file from web?
+
+  - reproducibility - if other wants to run your code from their end,
+    they can get data in exactly same way as i did w/o transfer a
+    datafile.
+  - datafile can be automatically updated every time we run the code
+    corresponding to the web.
+
+## Pokemon data
+
+``` r
+poke_df = 
+  GET('https://pokeapi.co/api/v2/pokemon/ditto') |> 
+  content()
+```
+
+- if ended with content(), we will see weird things. so we need to do
+  data organization this df.
+  - sometimes API gives us nicely structured thing (as water data and
+    brfss data), but sometimes they don’t (as this pokemon data)
+- For both of the API examples we saw today (water ds and brfss ds), it
+  wouldn’t be terrible to just download the CSV, document where it came
+  from carefully, and move on. APIs are more helpful when the full
+  dataset is complex and you only need pieces, or when the data are
+  updated regularly.

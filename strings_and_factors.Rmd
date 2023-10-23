@@ -172,3 +172,58 @@ as.numeric(fac_sex_level)
 * **`fct_recode`**: change factor labels by hand
 * **`fct_reorder`**: reorder factors by sorting along another variable
   * lots of factor functions and string functions we can google or search in r!
+
+
+# NSDUH
+
+### import nsduh dara
+
+```{r}
+nsduh_url = "http://samhda.s3-us-gov-west-1.amazonaws.com/s3fs-public/field-uploads/2k15StateFiles/NSDUHsaeShortTermCHG2015.htm"
+
+table_marj = 
+  read_html(nsduh_url) |> 
+  html_table() |> 
+  first() |>
+  slice(-1)
+```
+
+### need to tidy this ds
+
+```{r}
+data_marj =
+  table_marj |> 
+  select(-contains('P Value')) |> 
+  pivot_longer(
+    -State,
+    names_to = 'age_year',
+    values_to = 'percent'
+  ) |> 
+  separate(age_year, into = c('age', 'year'), sep = '\\(') |> 
+  mutate(
+    year = str_replace(year, '\\)', ''),
+    percent = str_replace(percent, '[a-c]$', ''),
+    percent = as.numeric(percent)
+  ) |> 
+  filter(!(State %in% c("Total U.S.", "Northeast", "Midwest", "South", "West")))
+```
+
+* **`select(-contains('P Value'))`**: remove any column that contains 'P Value'
+* **`-State`**: i want to pivot everything that is not in the State col
+* **`separate(age_year, into = c('age', 'year'), sep = '\\(')`**
+  * separate the col `age_year` into `age` and `year`
+  * where to separate? -- `sep =` 
+    * separate from the separate character, which is `(` here, and split it apart at this character, and get rid of this separation stuff. but the `(` is a special character, so we need to use `\\` b4 it. -- `'\\('`
+* inside the `mutate()`:
+  * **``str_replace(year, '\\)', '')`**: in year col, replace the `)` w nothing (nothing inside the '')
+* **` filter(!(State %in% c("Total U.S.", "Northeast", "Midwest", "South", "West")))`**: filters OUT rows where the "State" col is one of the specified values ("Total U.S.", "Northeast", "Midwest", "South", "West")
+
+* so for `stringr` part and regular expressions in this code:
+  * in separate, we split age and year at the open parentheses using `"\\("`
+  * we stripped out the close parenthesis in `mutate`
+  * to remove character superscripts, we replaced any character using `"[a-c]$"`
+  
+```{r}
+
+```
+

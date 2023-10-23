@@ -174,7 +174,7 @@ as.numeric(fac_sex_level)
   * lots of factor functions and string functions we can google or search in r!
 
 
-# NSDUH
+# NSDUH - string
 
 ### import nsduh dara
 
@@ -222,8 +222,25 @@ data_marj =
   * in separate, we split age and year at the open parentheses using `"\\("`
   * we stripped out the close parenthesis in `mutate`
   * to remove character superscripts, we replaced any character using `"[a-c]$"`
-  
-```{r}
+ 
+# NSDUH -- factors 
 
+so now i want to make a plot. Let’s quickly visualize these data for the 12-17 age group; to make the plot readable, we’ll treat State as a factor are reorder according to the median percent value.
+
+```{r}
+data_marj |> 
+  filter(age == '12-17') |> 
+  mutate(
+    State = fct_reorder(State, percent)
+    ) |> 
+  ggplot(aes(x = State, y = percent, color = year)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
+
+* `mutate(State = fct_reorder(State, percent))`: reorder the State col in the order of percent col. Since we have 2 percents for 1 state, r will use the median value of these 2 percents and put state in this order.
+  * we can also use sth like `fct_relevel(State, 'Texas', 'New York')` to reorder specific state order.
+  * we can use functions from the forcats package (eg.fct_ ), inside tidyverse, to work with character columns as if they were factor variables, without explicitly converting the column to a factor. These functions are designed to provide factor-like behavior for character vectors.
+  
+* `theme(axis.text.x = element_text(angle = 90, hjust = 1))`: make the lable in x-axis rotate 90 degree
 

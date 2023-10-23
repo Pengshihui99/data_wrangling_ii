@@ -244,3 +244,57 @@ data_marj |>
   
 * `theme(axis.text.x = element_text(angle = 90, hjust = 1))`: make the lable in x-axis rotate 90 degree
 
+# Weather data
+
+import data
+```{r}
+weather_df = 
+  rnoaa::meteo_pull_monitors(
+    c("USW00094728", "USW00022534", "USS0023B17S"),
+    var = c("PRCP", "TMIN", "TMAX"), 
+    date_min = "2021-01-01",
+    date_max = "2023-12-31") |>
+  mutate(
+    name = recode(
+      id, 
+      USW00094728 = "CentralPark_NY", 
+      USW00022534 = "Molokai_HI",
+      USS0023B17S = "Waterhole_WA"),
+    tmin = tmin / 10,
+    tmax = tmax / 10) |>
+  select(name, id, everything())
+```
+
+## factors matter in making plots
+
+```{r}
+weather_df |> 
+  mutate(
+    name = fct_relevel(name, c("Molokai_HI", "CentralPark_NY", "Waterhole_WA"))
+    ) |> 
+  ggplot(aes(x = name, y = tmax)) +
+  geom_violin()
+
+weather_df |> 
+  mutate(
+    name = fct_reorder(name, tmax)
+    ) |> 
+  ggplot(aes(x = name, y = tmax)) +
+  geom_violin(aes(fill = name), color = 'blue', alpha = 0.5)
+```
+
+## factors also matter in statistics
+```{r}
+weather_df |> 
+  lm(tmax ~ name, data = _)
+```
+
+* the ordering of factor variables play an important in this case as well. Specifically, the ordering determines the “reference” category, and is something that can be adjusted as needed. here, if we do not define the order, the order will be alphabetic, so the ref grp is CentralPark_NY for above code.
+
+```{r}
+weather_df |>
+  mutate(name = fct_relevel(name, c("Molokai_HI", "CentralPark_NY", "Waterhole_WA"))) |> 
+  lm(tmax ~ name, data = _)
+```
+
+* here, we reorder the name, so the ref grp will be Molokai_HI for above code

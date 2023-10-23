@@ -313,3 +313,120 @@ data_marj |>
     character vectors.
 - `theme(axis.text.x = element_text(angle = 90, hjust = 1))`: make the
   lable in x-axis rotate 90 degree
+
+# Weather data
+
+import data
+
+``` r
+weather_df = 
+  rnoaa::meteo_pull_monitors(
+    c("USW00094728", "USW00022534", "USS0023B17S"),
+    var = c("PRCP", "TMIN", "TMAX"), 
+    date_min = "2021-01-01",
+    date_max = "2023-12-31") |>
+  mutate(
+    name = recode(
+      id, 
+      USW00094728 = "CentralPark_NY", 
+      USW00022534 = "Molokai_HI",
+      USS0023B17S = "Waterhole_WA"),
+    tmin = tmin / 10,
+    tmax = tmax / 10) |>
+  select(name, id, everything())
+```
+
+    ## Registered S3 method overwritten by 'hoardr':
+    ##   method           from
+    ##   print.cache_info httr
+
+    ## using cached file: /Users/peng_/Library/Caches/org.R-project.R/R/rnoaa/noaa_ghcnd/USW00094728.dly
+
+    ## date created (size, mb): 2023-10-12 05:40:09.606797 (8.534)
+
+    ## file min/max dates: 1869-01-01 / 2023-10-31
+
+    ## using cached file: /Users/peng_/Library/Caches/org.R-project.R/R/rnoaa/noaa_ghcnd/USW00022534.dly
+
+    ## date created (size, mb): 2023-10-12 05:40:14.620904 (3.839)
+
+    ## file min/max dates: 1949-10-01 / 2023-10-31
+
+    ## using cached file: /Users/peng_/Library/Caches/org.R-project.R/R/rnoaa/noaa_ghcnd/USS0023B17S.dly
+
+    ## date created (size, mb): 2023-10-12 05:40:16.392605 (0.997)
+
+    ## file min/max dates: 1999-09-01 / 2023-10-31
+
+## factors matter in making plots
+
+``` r
+weather_df |> 
+  mutate(
+    name = fct_relevel(name, c("Molokai_HI", "CentralPark_NY", "Waterhole_WA"))
+    ) |> 
+  ggplot(aes(x = name, y = tmax)) +
+  geom_violin()
+```
+
+    ## Warning: Removed 84 rows containing non-finite values (`stat_ydensity()`).
+
+<img src="strings_and_factors_files/figure-gfm/unnamed-chunk-15-1.png" width="90%" />
+
+``` r
+weather_df |> 
+  mutate(
+    name = fct_reorder(name, tmax)
+    ) |> 
+  ggplot(aes(x = name, y = tmax)) +
+  geom_violin(aes(fill = name), color = 'blue', alpha = 0.5)
+```
+
+    ## Warning: There was 1 warning in `mutate()`.
+    ## ℹ In argument: `name = fct_reorder(name, tmax)`.
+    ## Caused by warning:
+    ## ! `fct_reorder()` removing 84 missing values.
+    ## ℹ Use `.na_rm = TRUE` to silence this message.
+    ## ℹ Use `.na_rm = FALSE` to preserve NAs.
+    ## Removed 84 rows containing non-finite values (`stat_ydensity()`).
+
+<img src="strings_and_factors_files/figure-gfm/unnamed-chunk-15-2.png" width="90%" />
+
+## factors also matter in statistics
+
+``` r
+weather_df |> 
+  lm(tmax ~ name, data = _)
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = tmax ~ name, data = weather_df)
+    ## 
+    ## Coefficients:
+    ##      (Intercept)    nameMolokai_HI  nameWaterhole_WA  
+    ##            18.29             10.11            -10.50
+
+- the ordering of factor variables play an important in this case as
+  well. Specifically, the ordering determines the “reference” category,
+  and is something that can be adjusted as needed. here, if we do not
+  define the order, the order will be alphabetic, so the ref grp is
+  CentralPark_NY for above code.
+
+``` r
+weather_df |>
+  mutate(name = fct_relevel(name, c("Molokai_HI", "CentralPark_NY", "Waterhole_WA"))) |> 
+  lm(tmax ~ name, data = _)
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = tmax ~ name, data = mutate(weather_df, name = fct_relevel(name, 
+    ##     c("Molokai_HI", "CentralPark_NY", "Waterhole_WA"))))
+    ## 
+    ## Coefficients:
+    ##        (Intercept)  nameCentralPark_NY    nameWaterhole_WA  
+    ##              28.41              -10.11              -20.62
+
+- here, we reorder the name, so the ref grp will be Molokai_HI for above
+  code

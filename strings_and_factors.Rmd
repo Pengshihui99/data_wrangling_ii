@@ -412,3 +412,40 @@ rest_inspec_1 |>
   geom_bar()
 ```
 
+
+# PULSE data
+
+import, tidy, manipulate data, including `str_replace()` and `factor()`
+```{r}
+pulse_data = 
+  haven::read_sas("data/public_pulse_data.sas7bdat") |>
+  janitor::clean_names() |>
+  pivot_longer(
+    bdi_score_bl:bdi_score_12m,
+    names_to = "visit", 
+    names_prefix = "bdi_score_",
+    values_to = "bdi") |>
+  select(id, visit, everything()) |>
+  mutate(
+    visit = str_replace(visit, "bl", "00m"),
+    visit = factor(visit)) |>
+  arrange(id, visit)
+```
+
+# Airbnb data
+
+```{r}
+data("nyc_airbnb")
+
+nyc_airbnb |>
+  filter(neighbourhood_group == "Manhattan") |> 
+  mutate(
+    neighbourhood = fct_reorder(neighbourhood, price)) |> 
+  ggplot(aes(x = neighbourhood, y = price)) +
+  geom_boxplot() +
+  coord_flip() + 
+  ylim(0, 1000)
+```
+
+* **`coord_flip()`**: is used to flip the coordinates, making the y-axis the categorical variable (neighbourhood) and the x-axis the continuous variable (price). This is often used when you want to create `horizontal boxplots`.
+* **`ylim(0, 1000)`**: This sets the y-axis limits, restricting the range of values displayed on the y-axis from 0 to 1000. This can be useful to zoom in on a specific range of values.
